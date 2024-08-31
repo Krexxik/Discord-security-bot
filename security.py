@@ -3,37 +3,30 @@ from disnake.ext import commands
 from disnake.ui import Button, View, Modal, TextInput
 import logging
 
-# Настраиваем логирование для отслеживания работы бота
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Создаем объект Intents и включаем необходимые интенты
 intents = disnake.Intents.default()
-intents.members = True  # Для работы с участниками
-intents.message_content = True  # Для доступа к содержимому сообщений
+intents.members = True
+intents.message_content = True
 
-# Инициализируем бота с указанными интентами
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Указываем ID канала, в который будут отправляться лог-сообщения
-LOG_CHANNEL_ID = 1276183097351868511  # Замените на ID вашего канала для логов
+LOG_CHANNEL_ID = 1276183097351868511
 
-# Список ID ролей, для которых бот будет игнорировать права и не банить
 IGNORE_ROLE_IDS = {
     1246500782661046404, 1254920793750634618, 1250922098486935603,
     1250922054535086140, 1246500933287022695, 1277741958877417580, 1276222225674141728
-}  # Замените на свои ID ролей
+}
 
 @bot.event
 async def on_member_join(member):
-    # Проверяем, если новый участник - это бот
     if member.bot:
         inviter = await find_inviter(member)
         if inviter:
             try:
                 guild = member.guild
-                bot_member = guild.me  # Получаем объект бота на сервере
-                # Проверяем, можно ли банить инвайтера
+                bot_member = guild.me
                 if inviter.top_role.position < bot_member.top_role.position:
                     await inviter.ban(reason="🚫 Попытка добавить бота на сервер")
                     logger.info(f"Инвайтер {inviter.name} забанен.")
@@ -53,7 +46,6 @@ async def on_member_join(member):
                             ).set_footer(text="Krexx Security")
                         )
                     
-                    # Отправляем личное сообщение инвайтеру
                     view = ReportErrorView()
                     try:
                         await inviter.send(
@@ -84,8 +76,7 @@ async def on_member_join(member):
 
         try:
             guild = member.guild
-            bot_member = guild.me  # Получаем объект бота на сервере
-            # Проверяем, можно ли забанить бота
+            bot_member = guild.me
             if member.top_role.position < bot_member.top_role.position:
                 await member.ban(reason="🚫 Автоматический бан бота анти-краш системой")
                 logger.info(f"Бот {member.name} забанен.")
@@ -105,7 +96,6 @@ async def on_member_join(member):
                         ).set_footer(text="Krexx Security")
                     )
 
-                # Отправляем личное сообщение забаненному боту
                 view = ReportErrorView()
                 try:
                     await member.send(
@@ -133,19 +123,16 @@ async def on_member_join(member):
 
 @bot.event
 async def on_member_update(before, after):
-    # Проверяем, добавились ли новые роли и действуем, если это бот
     if len(before.roles) < len(after.roles):
         new_roles = [role for role in after.roles if role not in before.roles]
         
         for role in new_roles:
             if role.id in IGNORE_ROLE_IDS:
-                # Если добавленная роль в списке игнорируемых, не предпринимаем действий
                 logger.info(f"Участник {after.name} добавил роль {role.name}, но это не бот. Никаких действий не предпринято.")
                 return
 
 async def find_inviter(member):
     try:
-        # Ищем, кто добавил бота на сервер
         logs = await member.guild.audit_logs(action=disnake.AuditLogAction.bot_add, limit=1).flatten()
         if logs:
             inviter = logs[0].user
@@ -161,8 +148,6 @@ async def find_inviter(member):
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}!')
-
-    # Устанавливаем статус бота
     game = disnake.Game(name="/info")
     await bot.change_presence(activity=game)
 
@@ -179,7 +164,7 @@ async def info(ctx: disnake.ApplicationCommandInteraction):
             "Этот бот предназначен для защиты вашего сервера от различных угроз, связанных с ботами и их действиями. "
             "Он предлагает надежную защиту и контроль, чтобы ваш сервер оставался безопасным и стабильным."
         ),
-        color=0x00ff00  # Вы можете выбрать любой цвет
+        color=0x00ff00 
     )
     
     embed.add_field(
@@ -227,7 +212,6 @@ class ReportErrorButton(Button):
 
 class ErrorReportModal(Modal):
     def __init__(self):
-        # Создаем модальное окно с текстовым полем для описания ошибки
         super().__init__(title="Мы заботимся о безопасности!", components=[])
         self.add_item(TextInput(label="Описание ошибки", placeholder="Опишите ошибку...", style=disnake.TextInputStyle.long))
     
